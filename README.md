@@ -1,2 +1,0 @@
-# Blockchain-Golang
-in proggress
