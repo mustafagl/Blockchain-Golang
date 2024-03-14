@@ -2,8 +2,6 @@ package blockchain
 
 import (
 	"crypto/sha256"
-	"bytes"
-	"encoding/gob"
 	"fmt"
 	//"encoding/hex"
 )
@@ -41,28 +39,4 @@ func (b *Block) CalculateHash() []byte {
 	data := append(b.PrevHash, b.Data...)
 	hash := sha256.Sum256(data)
 	return hash[:]
-}
-
-type Transaction struct {
-	Sender    string
-	Recipient string
-	Amount    float64
-}
-
-func NewTransaction(sender, recipient string, amount float64) *Transaction {
-	return &Transaction{
-		Sender:    sender,
-		Recipient: recipient,
-		Amount:    amount,
-	}
-}
-
-func SerializeTransactions(transactions []*Transaction) ([]byte, error) {
-	var buffer bytes.Buffer
-	encoder := gob.NewEncoder(&buffer)
-	err := encoder.Encode(transactions)
-	if err != nil {
-		return nil, err
-	}
-	return buffer.Bytes(), nil
 }
