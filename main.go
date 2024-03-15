@@ -18,9 +18,12 @@ func DeserializeTransactions(data []byte) ([]*blockchain.Transaction, error) {
 	return transactions, nil
 }
 
-func main() {
-	bc := blockchain.NewBlockchain()
 
+func main() {
+
+	blockchain.CreateAndSaveNewWallet()
+
+	bc := blockchain.NewBlockchain()
 	tx1 := blockchain.NewTransaction("Alice", "Bob", 100)
 	fmt.Printf("%+v\n", tx1)
 
