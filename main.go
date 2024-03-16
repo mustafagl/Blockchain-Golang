@@ -44,7 +44,7 @@ func main() {
 
 		fmt.Println("Transactions:")
 		for _, tx := range transactions {
-			fmt.Printf("\tSender: %s, Recipient: %s, Amount: %f\n", tx.Sender, tx.Recipient, tx.Amount)
+			fmt.Printf("\tSender: %s, Recipient: %s, Amount: %f, Signature:%x, PublicKey:%x\n", tx.Sender, tx.Recipient, tx.Amount, tx.Signature, tx.PublicKey)
 		}
 		fmt.Println()
 	}

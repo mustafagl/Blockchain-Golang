@@ -23,8 +23,8 @@ func GenerateKeyPair(bits int) (*rsa.PrivateKey, *rsa.PublicKey) {
 }
 
 // SignTransaction creates a signature of the transaction using the private key
-func SignTransaction(privkey *rsa.PrivateKey, transaction string) []byte {
-	hashed := sha256.Sum256([]byte(transaction))
+func SignTransaction(privkey *rsa.PrivateKey, transaction []byte) []byte {
+	hashed := sha256.Sum256(transaction)
 	signature, _ := rsa.SignPKCS1v15(rand.Reader, privkey, crypto.SHA256, hashed[:])
 	return signature
 }
