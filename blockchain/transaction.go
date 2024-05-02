@@ -40,3 +40,13 @@ func SerializeTransactions(transactions []*Transaction) ([]byte, error) {
 	}
 	return buffer.Bytes(), nil
 }
+
+func transactionSize(tx *Transaction) (int, error) {
+	var buffer bytes.Buffer
+	encoder := gob.NewEncoder(&buffer)
+	err := encoder.Encode(tx)
+	if err != nil {
+		return 0, err
+	}
+	return buffer.Len(), nil
+}

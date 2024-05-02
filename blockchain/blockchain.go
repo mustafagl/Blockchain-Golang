@@ -9,8 +9,7 @@ func NewBlockchain() *Blockchain {
 	return &Blockchain{Blocks: []*Block{genesisBlock}}
 }
 
-func (bc *Blockchain) AddBlock(transactions []*Transaction) {
-	prevBlock := bc.Blocks[len(bc.Blocks)-1]
-	newBlock := NewBlock(prevBlock.Hash, transactions)
-	bc.Blocks = append(bc.Blocks, newBlock)
+func (bc *Blockchain) AddBlock(nb *Block) {
+
+	bc.Blocks = append(bc.Blocks, nb)
 }

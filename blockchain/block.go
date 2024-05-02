@@ -4,19 +4,25 @@ import (
 	"crypto/sha256"
 	"fmt"
 	//"encoding/hex"
+	 "unsafe"
+
 )
 
 type Block struct {
 	PrevHash []byte
 	Data     []byte
 	Hash     []byte
+	Nonce    int
+
 }
 
 func NewBlock(prevHash []byte, transactions []*Transaction) *Block {
 	var err error
 	var data []byte
+
+	
 	data, err = SerializeTransactions(transactions)
-	fmt.Println("DATA:", data)
+	//fmt.Println("DATA:", data)
 	if err != nil {
 		// Handle the error, e.g., log it or return a block with an error field
 		// For simplicity, we'll just log it and return nil in this example
@@ -30,7 +36,20 @@ func NewBlock(prevHash []byte, transactions []*Transaction) *Block {
 	}
 	block.Hash = block.CalculateHash()
 
-	fmt.Println("HASH:", block.Hash)
+
+	blockSize := int(unsafe.Sizeof(block)) +
+		len(block.PrevHash) +
+		len(block.Data) +
+		len(block.Hash)
+
+	fmt.Println("BLOK BOYUT:", blockSize)
+
+	if blockSize > 1024*1024 {
+		fmt.Println("Block struct size with data is larger than 1 MB")
+	} else {
+		fmt.Println("Block struct size with data is within 1 MB")
+	}
+
 
 	return block
 }
