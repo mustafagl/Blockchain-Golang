@@ -15,21 +15,33 @@ type Transaction struct {
 	Signature []byte
 }
 
-func NewTransaction(sender, recipient string, amount float64) *Transaction {
-	privKey, pubKey := GenerateKeyPair(2048)
+func NewTransaction(sender, recipient string, amount float64, signature []byte, pubKey *rsa.PublicKey) *Transaction {
 	tx := &Transaction{
 		Sender:    sender,
 		Recipient: recipient,
 		Amount:    amount,
+		PublicKey: pubKey,
+		Signature: signature,
 	}	
 
+	return tx
+}
+
+func CreateTransactionClient(sender, recipient string, amount float64, privKey *rsa.PrivateKey, pubKey *rsa.PublicKey) *Transaction {
+	tx := &Transaction{
+		Sender:    sender,
+		Recipient: recipient,
+		Amount:    amount,
+		PublicKey: pubKey,
+	}	
 	txData := []byte(fmt.Sprintf("%s%s%f", tx.Sender, tx.Recipient, tx.Amount))
 
 	tx.Signature = SignTransaction(privKey, txData)
 	tx.PublicKey = pubKey
-
 	return tx
 }
+
+
 
 func SerializeTransactions(transactions []*Transaction) ([]byte, error) {
 	var buffer bytes.Buffer

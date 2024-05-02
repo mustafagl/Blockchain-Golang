@@ -30,10 +30,10 @@ func SignTransaction(privkey *rsa.PrivateKey, transaction []byte) []byte {
 }
 
 // VerifySignature checks the signature against the transaction using the public key
-func VerifySignature(pubkey *rsa.PublicKey, transaction string, signature []byte) bool {
-	hashed := sha256.Sum256([]byte(transaction))
-	err := rsa.VerifyPKCS1v15(pubkey, crypto.SHA256, hashed[:], signature)
-	return err == nil
+func VerifySignature(pubkey *rsa.PublicKey, transaction []byte, signature []byte) bool {
+    hashed := sha256.Sum256(transaction)
+    err := rsa.VerifyPKCS1v15(pubkey, crypto.SHA256, hashed[:], signature)
+    return err == nil
 }
 
 // Address generates a unique address for a public key

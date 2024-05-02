@@ -5,6 +5,7 @@ import (
 	"go-blockchain/blockchain"
 	"bytes"
 	"encoding/gob"
+
 )
 
 func DeserializeTransactions(data []byte) ([]*blockchain.Transaction, error) {
@@ -20,14 +21,40 @@ func DeserializeTransactions(data []byte) ([]*blockchain.Transaction, error) {
 
 func testMempool() *blockchain.Mempool {
 	// Create a new mempool
+	privKey, pubKey := blockchain.GenerateKeyPair(2048)
+	//byteSlice := make([]byte, 10)
+	//Signature := blockchain.SignTransaction(privKey, byteSlice)
+	
 	mempool := blockchain.NewMempool()
 
-	tx1 := blockchain.NewTransaction("Alice", "Bob", 100)
+	numTransactions := 2000
 
-	tx2 := blockchain.NewTransaction("Charlie", "Alice", 200)
+	for i := 0; i < numTransactions; i++ {
+		// Create random sender and recipient names
+		sender := fmt.Sprintf("Sender%d", i)
+		recipient := fmt.Sprintf("Recipient%d", i)
+		// Create a random amount between 1 and 100
+		amount := float64(i)
+		// Create a new transaction
+		tx := blockchain.CreateTransactionClient(sender, recipient, amount, privKey, pubKey)
+		//tx := blockchain.NewTransaction(sender, recipient, amount, Signature, pubKey)
 
-	mempool.AddTransaction(tx1)
-	mempool.AddTransaction(tx2)
+		// Add the transaction to the mempool
+		mempool.AddTransaction(tx)
+	}
+
+	// Get all transactions from the mempool and print them
+
+	return mempool
+}
+func main() {
+	privKey, pubKey := blockchain.GenerateKeyPair(2048)
+	byteSlice := make([]byte, 10)
+	Signature := blockchain.SignTransaction(privKey, byteSlice)
+
+	blockchain.CreateAndSaveNewWallet()
+
+	mempool := testMempool()
 
 	// Get all transactions from the mempool and print them
 	transactions := mempool.GetTransactionsWithinLimit()
@@ -36,31 +63,16 @@ func testMempool() *blockchain.Mempool {
 			tx.Sender, tx.Recipient, tx.Amount)
 	}
 
-	return mempool
-}
-func main() {
-
-	blockchain.CreateAndSaveNewWallet()
-
-	mempool := testMempool()
-
-	// Get all transactions from the mempool and print them
-	transactions := mempool.GetTransactions()
-	for _, tx := range transactions {
-		fmt.Printf("Transaction Sender: %s, Recipient: %s, Amount: %.2f\n",
-			tx.Sender, tx.Recipient, tx.Amount)
-	}
-
 
 	bc := blockchain.NewBlockchain()
 	//fmt.Printf("%+v\n", tx1)
-	tx1 := blockchain.NewTransaction("Alice", "Bob", 100)
+	tx1 := blockchain.NewTransaction("Alice", "Bob", 100, Signature, pubKey)
 
 	//tx2 := blockchain.NewTransaction("Bob", "Charlie", 50)
 
 	//tx3 := blockchain.NewTransaction("Bob", "Alex", 50)
 
-	coinbasetx := blockchain.NewTransaction("Reward System", "Miner0", 50)
+	coinbasetx := blockchain.NewTransaction("Reward System", "Miner0", 50, Signature, pubKey)
 
 	prevBlock := bc.Blocks[len(bc.Blocks)-1]
 
@@ -72,22 +84,4 @@ func main() {
 
 	//bc.AddBlock([]*blockchain.Transaction{coinbasetx, tx1, tx2, tx3})
 
-	for _, block := range bc.Blocks {
-		fmt.Printf("Prev. hash: %x\n", block.PrevHash)
-		fmt.Printf("Hash: %x\n", block.Hash)
-		fmt.Printf("Data: %x\n", block.Data)
-		fmt.Printf("Nonce: %x\n", block.Nonce)
-
-		transactions, err := DeserializeTransactions(block.Data)
-		if err != nil {
-			fmt.Println("Error deserializing transactions:", err)
-			continue
-		}
-
-		fmt.Println("Transactions:")
-		for _, tx := range transactions {
-			fmt.Printf("\tSender: %s, Recipient: %s, Amount: %f, Signature:%x, PublicKey:%x\n", tx.Sender, tx.Recipient, tx.Amount, tx.Signature, tx.PublicKey)
-		}
-		fmt.Println()
-	}
 }

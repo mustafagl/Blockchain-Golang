@@ -40,8 +40,15 @@ func (m *Mempool) GetTransactionsWithinLimit() []*Transaction {
 	var totalSize int
 
 	for _, tx := range m.Transactions {
+		txData := []byte(fmt.Sprintf("%s%s%f", tx.Sender, tx.Recipient, tx.Amount))
+
+		isValid := VerifySignature(tx.PublicKey, txData, tx.Signature)
+		if !isValid {
+			fmt.Printf("Signature is wrong")
+			break
+		}		
 		txSize, err := transactionSize(tx)
-		if err != nil {
+		if err != nil || !isValid {
 			continue
 		}		
 		fmt.Printf("Total Size: %d \n", totalSize)
