@@ -43,6 +43,15 @@ func (m *Mempool) GetTransactionsWithinLimit() []*Transaction {
 		txData := []byte(fmt.Sprintf("%s%s%f", tx.Sender, tx.Recipient, tx.Amount))
 
 		isValid := VerifySignature(tx.PublicKey, txData, tx.Signature)
+
+		address := Address(tx.PublicKey)
+		if address != tx.Sender {
+			fmt.Printf("Sender is wrong")
+			break
+		}
+		fmt.Println("Address:")
+		fmt.Println(address)
+
 		if !isValid {
 			fmt.Printf("Signature is wrong")
 			break

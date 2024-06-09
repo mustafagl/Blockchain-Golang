@@ -1,11 +1,10 @@
 package main
 
 import (
-	"fmt"
-	"go-blockchain/blockchain"
 	"bytes"
 	"encoding/gob"
-
+	"fmt"
+	"go-blockchain/blockchain"
 )
 
 func DeserializeTransactions(data []byte) ([]*blockchain.Transaction, error) {
@@ -21,22 +20,23 @@ func DeserializeTransactions(data []byte) ([]*blockchain.Transaction, error) {
 
 func testMempool() *blockchain.Mempool {
 	// Create a new mempool
-	privKey, pubKey := blockchain.GenerateKeyPair(2048)
 	//byteSlice := make([]byte, 10)
 	//Signature := blockchain.SignTransaction(privKey, byteSlice)
-	
+
 	mempool := blockchain.NewMempool()
 
-	numTransactions := 2000
+	numTransactions := 20
 
 	for i := 0; i < numTransactions; i++ {
+		privKey, pubKey := blockchain.GenerateKeyPair(2048)
+
 		// Create random sender and recipient names
-		sender := fmt.Sprintf("Sender%d", i)
+		//sender := fmt.Sprintf("Sender%d", i)
 		recipient := fmt.Sprintf("Recipient%d", i)
 		// Create a random amount between 1 and 100
 		amount := float64(i)
 		// Create a new transaction
-		tx := blockchain.CreateTransactionClient(sender, recipient, amount, privKey, pubKey)
+		tx := blockchain.CreateTransactionClient(blockchain.Address(pubKey), recipient, amount, privKey, pubKey)
 		//tx := blockchain.NewTransaction(sender, recipient, amount, Signature, pubKey)
 
 		// Add the transaction to the mempool
@@ -63,7 +63,6 @@ func main() {
 			tx.Sender, tx.Recipient, tx.Amount)
 	}
 
-
 	bc := blockchain.NewBlockchain()
 	//fmt.Printf("%+v\n", tx1)
 	tx1 := blockchain.NewTransaction("Alice", "Bob", 100, Signature, pubKey)
@@ -76,8 +75,8 @@ func main() {
 
 	prevBlock := bc.Blocks[len(bc.Blocks)-1]
 
-	block1 := blockchain.NewBlock(prevBlock.Hash,[]*blockchain.Transaction{coinbasetx})
-	block2 := blockchain.NewBlock(prevBlock.Hash,[]*blockchain.Transaction{coinbasetx,tx1})
+	block1 := blockchain.NewBlock(prevBlock.Hash, transactions)
+	block2 := blockchain.NewBlock(prevBlock.Hash, []*blockchain.Transaction{coinbasetx, tx1})
 
 	bc.AddBlock(block1)
 	bc.AddBlock(block2)

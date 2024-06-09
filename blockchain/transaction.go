@@ -2,8 +2,8 @@ package blockchain
 
 import (
 	"bytes"
-	"encoding/gob"
 	"crypto/rsa"
+	"encoding/gob"
 	"fmt"
 )
 
@@ -22,7 +22,7 @@ func NewTransaction(sender, recipient string, amount float64, signature []byte, 
 		Amount:    amount,
 		PublicKey: pubKey,
 		Signature: signature,
-	}	
+	}
 
 	return tx
 }
@@ -33,7 +33,7 @@ func CreateTransactionClient(sender, recipient string, amount float64, privKey *
 		Recipient: recipient,
 		Amount:    amount,
 		PublicKey: pubKey,
-	}	
+	}
 	txData := []byte(fmt.Sprintf("%s%s%f", tx.Sender, tx.Recipient, tx.Amount))
 
 	tx.Signature = SignTransaction(privKey, txData)
@@ -41,12 +41,20 @@ func CreateTransactionClient(sender, recipient string, amount float64, privKey *
 	return tx
 }
 
-
-
 func SerializeTransactions(transactions []*Transaction) ([]byte, error) {
 	var buffer bytes.Buffer
 	encoder := gob.NewEncoder(&buffer)
 	err := encoder.Encode(transactions)
+	if err != nil {
+		return nil, err
+	}
+	return buffer.Bytes(), nil
+}
+
+func SerializeTransaction(tx *Transaction) ([]byte, error) {
+	var buffer bytes.Buffer
+	encoder := gob.NewEncoder(&buffer)
+	err := encoder.Encode(tx)
 	if err != nil {
 		return nil, err
 	}
