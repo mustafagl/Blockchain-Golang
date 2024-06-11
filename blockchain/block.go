@@ -13,12 +13,22 @@ type Block struct {
 	Hash       []byte
 	Nonce      int
 	MerkleRoot []byte
-	Timestamp  int64 // Added timestamp field
+	Timestamp  int64
+	MinerName  string // Madenci adı
 }
 
-func NewBlock(prevHash []byte, transactions []*Transaction) *Block {
+func NewBlock(prevHash []byte, transactions []*Transaction, reward float64, miner string, bc *Blockchain) *Block {
 	var err error
 	var data []byte
+	startTime := time.Now()
+
+	// Add reward transaction
+	rewardTx := &Transaction{
+		Sender:    "Reward System",
+		Recipient: miner,
+		Amount:    reward,
+	}
+	transactions = append(transactions, rewardTx)
 
 	data, err = SerializeTransactions(transactions)
 	if err != nil {
@@ -36,6 +46,7 @@ func NewBlock(prevHash []byte, transactions []*Transaction) *Block {
 		}
 		txData = append(txData, txBytes)
 	}
+
 	merkleTree := NewMerkleTree(txData)
 	merkleRoot := merkleTree.RootNode.Data
 
@@ -43,12 +54,20 @@ func NewBlock(prevHash []byte, transactions []*Transaction) *Block {
 		PrevHash:   prevHash,
 		Data:       data,
 		MerkleRoot: merkleRoot,
-		Timestamp:  time.Now().Unix(), // Set current timestamp
+		Timestamp:  time.Now().Unix(),
+		MinerName:  miner,
 	}
-	pow := NewProofOfWork(block)
+
+	pow := NewProofOfWork(block, bc)
 	nonce, hash := pow.Run()
 	block.Nonce = nonce
 	block.Hash = hash
+
+	endTime := time.Now()
+
+	// Süreyi hesapla
+	duration := endTime.Sub(startTime)
+	fmt.Printf("Duration pow: %v\n", duration)
 
 	blockSize := int(unsafe.Sizeof(block)) +
 		len(block.PrevHash) +
@@ -62,7 +81,7 @@ func NewBlock(prevHash []byte, transactions []*Transaction) *Block {
 	} else {
 		fmt.Println("Block struct size with data is within 1 MB")
 	}
-	block.Print()
+
 	return block
 }
 
@@ -73,12 +92,13 @@ func (b *Block) CalculateHash() []byte {
 	return hash[:]
 }
 
-// Print prints the block's details, including only the first 10 bytes of the data
 func (b *Block) Print() {
 	fmt.Printf("Block - Hash: %x\n", b.Hash)
 	fmt.Printf("Previous Hash: %x\n", b.PrevHash)
 	fmt.Printf("Merkle Root: %x\n", b.MerkleRoot)
 	fmt.Printf("Data (first 10 bytes): %x\n", b.Data[:10])
 	fmt.Printf("Nonce: %d\n", b.Nonce)
+	fmt.Printf("Miner: %s\n", b.MinerName)
+
 	fmt.Println()
 }

@@ -6,19 +6,21 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"time"
 )
 
-const targetBits = 21
+const targetBits = 17
 
 type ProofOfWork struct {
-	block  *Block
-	target *big.Int
+	block      *Block
+	blockchain *Blockchain
+	target     *big.Int
 }
 
-func NewProofOfWork(b *Block) *ProofOfWork {
+func NewProofOfWork(b *Block, bc *Blockchain) *ProofOfWork {
 	target := big.NewInt(1)
 	target.Lsh(target, uint(256-targetBits))
-	pow := &ProofOfWork{b, target}
+	pow := &ProofOfWork{block: b, blockchain: bc, target: target}
 	return pow
 }
 
@@ -35,17 +37,39 @@ func (pow *ProofOfWork) Run() (int, []byte) {
 	var hashInt big.Int
 	var hash [32]byte
 	nonce := 0
+	reset := make(chan bool)
+
+	// Goroutine to check for block changes
+	go func() {
+		initialBlock := pow.blockchain.LastBlock()
+		initialBlockHash := sha256.Sum256(initialBlock.Data)
+		for {
+			time.Sleep(5 * time.Second) // Check every 5 seconds
+			currentBlock := pow.blockchain.LastBlock()
+			currentBlockHash := sha256.Sum256(currentBlock.Data)
+			if currentBlockHash != initialBlockHash {
+				reset <- true
+				break
+			}
+		}
+	}()
 
 	for nonce < math.MaxInt64 {
-		data := pow.prepareData(nonce)
-		hash = sha256.Sum256(data)
-		hashInt.SetBytes(hash[:])
+		select {
+		case <-reset:
+			fmt.Println("Blockchain's last block changed, restarting the proof of work")
+			nonce = 0
+		default:
+			data := pow.prepareData(nonce)
+			hash = sha256.Sum256(data)
+			hashInt.SetBytes(hash[:])
 
-		if hashInt.Cmp(pow.target) == -1 {
-			fmt.Printf("Found hash: %s\n", hex.EncodeToString(hash[:]))
-			break
-		} else {
-			nonce++
+			if hashInt.Cmp(pow.target) == -1 {
+				fmt.Printf("Found hash: %s\n", hex.EncodeToString(hash[:]))
+				return nonce, hash[:]
+			} else {
+				nonce++
+			}
 		}
 	}
 

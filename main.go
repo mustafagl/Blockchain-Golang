@@ -1,28 +1,12 @@
 package main
 
 import (
-	"bytes"
-	"encoding/gob"
+	"flag"
 	"fmt"
 	"go-blockchain/blockchain"
 )
 
-func DeserializeTransactions(data []byte) ([]*blockchain.Transaction, error) {
-	var transactions []*blockchain.Transaction
-	buffer := bytes.NewBuffer(data)
-	decoder := gob.NewDecoder(buffer)
-	err := decoder.Decode(&transactions)
-	if err != nil {
-		return nil, err
-	}
-	return transactions, nil
-}
-
 func testMempool() *blockchain.Mempool {
-	// Create a new mempool
-	//byteSlice := make([]byte, 10)
-	//Signature := blockchain.SignTransaction(privKey, byteSlice)
-
 	mempool := blockchain.NewMempool()
 
 	numTransactions := 20
@@ -30,57 +14,49 @@ func testMempool() *blockchain.Mempool {
 	for i := 0; i < numTransactions; i++ {
 		privKey, pubKey := blockchain.GenerateKeyPair(2048)
 
-		// Create random sender and recipient names
-		//sender := fmt.Sprintf("Sender%d", i)
 		recipient := fmt.Sprintf("Recipient%d", i)
-		// Create a random amount between 1 and 100
 		amount := float64(i)
-		// Create a new transaction
-		tx := blockchain.CreateTransactionClient(blockchain.Address(pubKey), recipient, amount, privKey, pubKey)
-		//tx := blockchain.NewTransaction(sender, recipient, amount, Signature, pubKey)
 
-		// Add the transaction to the mempool
+		tx := blockchain.CreateTransactionClient(blockchain.Address(pubKey), recipient, amount, privKey, pubKey)
+
 		mempool.AddTransaction(tx)
 	}
 
-	// Get all transactions from the mempool and print them
-
 	return mempool
 }
+
 func main() {
-	privKey, pubKey := blockchain.GenerateKeyPair(2048)
-	byteSlice := make([]byte, 10)
-	Signature := blockchain.SignTransaction(privKey, byteSlice)
+	// Define command-line arguments
+	nodeAddress := flag.String("node", "localhost:3000", "Address of the node")
+	nodeName := flag.String("name", "Node", "Name of the node")
+	peerAddress := flag.String("peer", "", "Address of the peer node")
 
-	blockchain.CreateAndSaveNewWallet()
+	// Parse command-line arguments
+	flag.Parse()
 
-	mempool := testMempool()
+	// Create miner's keypair
+	_, minerPubKey := blockchain.GenerateKeyPair(2048)
+	minerAddress := blockchain.Address(minerPubKey)
 
-	// Get all transactions from the mempool and print them
-	transactions := mempool.GetTransactionsWithinLimit()
-	for _, tx := range transactions {
-		fmt.Printf("Transaction Sender: %s, Recipient: %s, Amount: %.2f\n",
-			tx.Sender, tx.Recipient, tx.Amount)
+	// Set initial reward for mining a block
+	blockReward := 50.0
+
+	node := blockchain.NewNode(*nodeAddress)
+	node.Name = *nodeName
+
+	if *peerAddress != "" {
+		node.AddPeer(*peerAddress)
+		fmt.Println("Added peer:", *peerAddress)
 	}
 
-	bc := blockchain.NewBlockchain()
-	//fmt.Printf("%+v\n", tx1)
-	tx1 := blockchain.NewTransaction("Alice", "Bob", 100, Signature, pubKey)
+	mempool := testMempool()
+	node.Mempool = mempool
 
-	//tx2 := blockchain.NewTransaction("Bob", "Charlie", 50)
+	go node.Start()
+	fmt.Println(node.Name, "started at", *nodeAddress)
 
-	//tx3 := blockchain.NewTransaction("Bob", "Alex", 50)
+	go node.GenerateAndBroadcastBlock(blockReward, minerAddress)
 
-	coinbasetx := blockchain.NewTransaction("Reward System", "Miner0", 50, Signature, pubKey)
-
-	prevBlock := bc.Blocks[len(bc.Blocks)-1]
-
-	block1 := blockchain.NewBlock(prevBlock.Hash, transactions)
-	block2 := blockchain.NewBlock(prevBlock.Hash, []*blockchain.Transaction{coinbasetx, tx1})
-
-	bc.AddBlock(block1)
-	bc.AddBlock(block2)
-
-	//bc.AddBlock([]*blockchain.Transaction{coinbasetx, tx1, tx2, tx3})
-
+	fmt.Println("Block reward:", blockReward, "Miner address:", minerAddress)
+	select {} // Run forever
 }
