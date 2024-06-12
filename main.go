@@ -35,7 +35,7 @@ func main() {
 	flag.Parse()
 
 	// Create miner's keypair
-	_, minerPubKey := blockchain.GenerateKeyPair(2048)
+	minerPrivKey, minerPubKey := blockchain.GenerateKeyPair(2048)
 	minerAddress := blockchain.Address(minerPubKey)
 
 	// Set initial reward for mining a block
@@ -51,6 +51,9 @@ func main() {
 
 	mempool := testMempool()
 	node.Mempool = mempool
+
+	node.PrivateKey = minerPrivKey
+	node.PublicKey = minerPubKey
 
 	go node.Start()
 	fmt.Println(node.Name, "started at", *nodeAddress)

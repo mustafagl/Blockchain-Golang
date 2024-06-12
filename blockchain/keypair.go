@@ -5,15 +5,13 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
-	"encoding/hex"
 	"crypto/x509"
-	"encoding/pem"
+	"encoding/hex"
 	"encoding/json"
-	"os"
+	"encoding/pem"
 	"fmt"
-
+	"os"
 )
-
 
 // GenerateKeyPair generates a new key pair
 func GenerateKeyPair(bits int) (*rsa.PrivateKey, *rsa.PublicKey) {
@@ -31,9 +29,9 @@ func SignTransaction(privkey *rsa.PrivateKey, transaction []byte) []byte {
 
 // VerifySignature checks the signature against the transaction using the public key
 func VerifySignature(pubkey *rsa.PublicKey, transaction []byte, signature []byte) bool {
-    hashed := sha256.Sum256(transaction)
-    err := rsa.VerifyPKCS1v15(pubkey, crypto.SHA256, hashed[:], signature)
-    return err == nil
+	hashed := sha256.Sum256(transaction)
+	err := rsa.VerifyPKCS1v15(pubkey, crypto.SHA256, hashed[:], signature)
+	return err == nil
 }
 
 // Address generates a unique address for a public key
@@ -110,12 +108,12 @@ func SaveKeyPairAndAddressToJSON(filename string, privKey *rsa.PrivateKey, pubKe
 	return nil
 }
 
-func CreateAndSaveNewWallet() (*rsa.PrivateKey,*rsa.PublicKey,string){
-	private_key,public_key := GenerateKeyPair(2048)
+func CreateAndSaveNewWallet() (*rsa.PrivateKey, *rsa.PublicKey, string) {
+	private_key, public_key := GenerateKeyPair(2048)
 	address := Address(public_key)
 	err := SaveKeyPairAndAddressToJSON("keypair_and_address.json", private_key, public_key, address)
 	if err != nil {
 		fmt.Println("Error saving to JSON:", err)
 	}
-	return private_key,public_key,address
+	return private_key, public_key, address
 }

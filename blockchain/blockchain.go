@@ -17,6 +17,7 @@ func NewBlockchain() *Blockchain {
 }
 
 func (bc *Blockchain) AddBlock(block *Block) {
+	//fmt.Printf("Blok ekleniyor: %+v\n", block)
 	bc.Blocks = append(bc.Blocks, block)
 }
 
@@ -24,7 +25,9 @@ func (bc *Blockchain) LastBlock() *Block {
 	if len(bc.Blocks) == 0 {
 		return nil
 	}
-	return bc.Blocks[len(bc.Blocks)-1]
+	lastBlock := bc.Blocks[len(bc.Blocks)-1]
+	//fmt.Printf("Son blok alındı: %+v\n", lastBlock)
+	return lastBlock
 }
 
 func (bc *Blockchain) Print() {

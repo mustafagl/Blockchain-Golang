@@ -17,7 +17,7 @@ type Block struct {
 	MinerName  string // Madenci adı
 }
 
-func NewBlock(prevHash []byte, transactions []*Transaction, reward float64, miner string, bc *Blockchain) *Block {
+func NewBlock(prevHash []byte, transactions []*Transaction, reward float64, node *Node) (*Block, bool) {
 	var err error
 	var data []byte
 	startTime := time.Now()
@@ -25,7 +25,7 @@ func NewBlock(prevHash []byte, transactions []*Transaction, reward float64, mine
 	// Add reward transaction
 	rewardTx := &Transaction{
 		Sender:    "Reward System",
-		Recipient: miner,
+		Recipient: node.Name,
 		Amount:    reward,
 	}
 	transactions = append(transactions, rewardTx)
@@ -33,7 +33,7 @@ func NewBlock(prevHash []byte, transactions []*Transaction, reward float64, mine
 	data, err = SerializeTransactions(transactions)
 	if err != nil {
 		fmt.Println("Error serializing transactions:", err)
-		return nil
+		return nil, true
 	}
 
 	// Create Merkle Tree
@@ -42,7 +42,7 @@ func NewBlock(prevHash []byte, transactions []*Transaction, reward float64, mine
 		txBytes, err := SerializeTransaction(tx)
 		if err != nil {
 			fmt.Println("Error serializing transaction:", err)
-			return nil
+			return nil, true
 		}
 		txData = append(txData, txBytes)
 	}
@@ -55,11 +55,12 @@ func NewBlock(prevHash []byte, transactions []*Transaction, reward float64, mine
 		Data:       data,
 		MerkleRoot: merkleRoot,
 		Timestamp:  time.Now().Unix(),
-		MinerName:  miner,
+		MinerName:  node.Name,
 	}
 
-	pow := NewProofOfWork(block, bc)
-	nonce, hash := pow.Run()
+	pow := NewProofOfWork(block, node)
+	nonce, hash, stopmining := pow.Run()
+
 	block.Nonce = nonce
 	block.Hash = hash
 
@@ -82,7 +83,7 @@ func NewBlock(prevHash []byte, transactions []*Transaction, reward float64, mine
 		fmt.Println("Block struct size with data is within 1 MB")
 	}
 
-	return block
+	return block, stopmining
 }
 
 func (b *Block) CalculateHash() []byte {

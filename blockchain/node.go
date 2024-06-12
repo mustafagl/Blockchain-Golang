@@ -1,6 +1,9 @@
 package blockchain
 
 import (
+	"bytes"
+	"crypto/rsa"
+	"crypto/sha256"
 	"encoding/gob"
 	"fmt"
 	"net"
@@ -19,6 +22,8 @@ type Node struct {
 	Peers      []string
 	mutex      sync.Mutex
 	Name       string // New field
+	PrivateKey *rsa.PrivateKey
+	PublicKey  *rsa.PublicKey
 }
 
 func NewNode(address string) *Node {
@@ -63,8 +68,10 @@ func (node *Node) HandleConnection(conn net.Conn) {
 				fmt.Println("Blok çözümlenemedi:", err)
 				continue
 			}
-			if isValidBlock(block) {
+			//fmt.Printf("Alınan blok: %+v\n", block)
+			if node.isValidBlock(block) {
 				node.Blockchain.AddBlock(&block)
+				fmt.Println("Peer'den alınan blok eklendi")
 				node.Blockchain.Print()
 			}
 		case "transaction":
@@ -88,9 +95,46 @@ func (node *Node) HandleConnection(conn net.Conn) {
 	}
 }
 
-func isValidBlock(block Block) bool {
-	// Implement your validation logic here
-	// For example, checking the block's hash, transactions, etc.
+func (node *Node) isValidBlock(block Block) bool {
+	// 1. Blok hash'i kontrol edin
+	bc := node.Blockchain
+	lastBlock := bc.LastBlock()
+	pow := NewProofOfWork(&block, node)
+
+	data := pow.prepareData(block.Nonce)
+	hash := sha256.Sum256(data)
+
+	if !bytes.Equal(block.Hash, hash[:]) {
+		fmt.Println("Geçersiz blok hash'i")
+		return false
+	}
+
+	if lastBlock == nil || !bytes.Equal(block.PrevHash, lastBlock.Hash) {
+		block.Print()
+		lastBlock.Print()
+
+		fmt.Println("Geçersiz önceki blok hash'i")
+		return false
+	}
+
+	// 3. Zaman damgasını kontrol edin
+	//if block.Timestamp <= lastBlock.Timestamp {
+	//	fmt.Println("Geçersiz zaman damgası")
+	//	return false
+	//}
+
+	// 4. İşlemleri kontrol edin
+	if !isValidTransactions(block.Data) {
+		return false
+	}
+
+	// 5. İş kanıtını kontrol edin (eğer PoW kullanıyorsanız)
+
+	if !pow.Validate() {
+		fmt.Println("Geçersiz iş kanıtı")
+		return false
+	}
+
 	return true
 }
 
@@ -184,16 +228,35 @@ func (node *Node) SyncBlockchain() {
 
 func (node *Node) GenerateAndBroadcastBlock(reward float64, minerAddress string) {
 	for {
-		prevBlock := node.Blockchain.Blocks[len(node.Blockchain.Blocks)-1]
 		transactions := node.Mempool.GetTransactionsWithinLimit()
 		if len(transactions) == 0 {
 			continue
 		}
-		newBlock := NewBlock(prevBlock.Hash, transactions, reward, node.Name, node.Blockchain)
+
+		node.mutex.Lock() // Blockchain'e erişim sırasında kilitle
+		prevBlock := node.Blockchain.LastBlock()
+		if prevBlock == nil {
+			fmt.Println("Önceki blok bulunamadı!")
+			node.mutex.Unlock()
+			continue
+		}
+
+		//fmt.Printf("Önceki blok: %+v\n", prevBlock)
+		//prevBlock.Print()
+
+		newBlock, stopmining := NewBlock(prevBlock.Hash, transactions, reward, node)
+		if stopmining {
+			node.mutex.Unlock()
+			continue
+		}
 		newBlock.MinerName = node.Name // Add node name to the block
-		node.Blockchain.AddBlock(newBlock)
-		node.BroadcastBlock(newBlock)
-		node.Blockchain.Print()
+
+		if node.isValidBlock(*newBlock) {
+			node.Blockchain.AddBlock(newBlock)
+			node.BroadcastBlock(newBlock)
+			node.Blockchain.Print()
+		}
+		node.mutex.Unlock() // Blockchain'e erişim bittiğinde kilidi kaldır
 	}
 }
 
