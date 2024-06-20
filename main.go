@@ -30,6 +30,7 @@ func main() {
 	nodeAddress := flag.String("node", "localhost:3000", "Address of the node")
 	nodeName := flag.String("name", "Node", "Name of the node")
 	peerAddress := flag.String("peer", "", "Address of the peer node")
+	apiAddress := flag.String("api", "localhost:8080", "Address of the API server")
 
 	// Parse command-line arguments
 	flag.Parse()
@@ -61,5 +62,9 @@ func main() {
 	go node.GenerateAndBroadcastBlock(blockReward, minerAddress)
 
 	fmt.Println("Block reward:", blockReward, "Miner address:", minerAddress)
+
+	api := blockchain.NewAPI(node)
+	go api.Run(*apiAddress)
+
 	select {} // Run forever
 }

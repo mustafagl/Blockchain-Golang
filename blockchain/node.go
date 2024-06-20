@@ -85,9 +85,15 @@ func (node *Node) HandleConnection(conn net.Conn) {
 			node.Mempool.Print()
 		case "sync":
 			encoder := gob.NewEncoder(conn)
-			err := encoder.Encode(node.Blockchain)
+			err := encoder.Encode(struct {
+				Blockchain Blockchain
+				Mempool    Mempool
+			}{
+				Blockchain: *node.Blockchain,
+				Mempool:    *node.Mempool,
+			})
 			if err != nil {
-				fmt.Println("Blockchain gönderilemedi:", err)
+				fmt.Println("Blockchain ve mempool gönderilemedi:", err)
 			}
 		default:
 			fmt.Println("Bilinmeyen istek türü:", request["type"])
@@ -209,21 +215,29 @@ func (node *Node) SyncBlockchain() {
 			continue
 		}
 
-		var response Blockchain
+		var response struct {
+			Blockchain Blockchain
+			Mempool    Mempool
+		}
 		decoder := gob.NewDecoder(conn)
 		err = decoder.Decode(&response)
 		if err != nil {
-			fmt.Println("Failed to receive blockchain:", err)
+			fmt.Println("Failed to receive blockchain and mempool:", err)
 			continue
 		}
 
 		// Replace the local blockchain with the received blockchain if it's longer
-		if len(response.Blocks) > len(node.Blockchain.Blocks) {
-			node.Blockchain = &response
+		if len(response.Blockchain.Blocks) > len(node.Blockchain.Blocks) {
+			node.Blockchain = &response.Blockchain
+		}
+
+		// Replace the local mempool with the received mempool if it has more transactions
+		if len(response.Mempool.Transactions) > len(node.Mempool.Transactions) {
+			node.Mempool = &response.Mempool
 		}
 	}
 
-	fmt.Println("Blockchain synchronized")
+	fmt.Println("Blockchain and Mempool synchronized")
 }
 
 func (node *Node) GenerateAndBroadcastBlock(reward float64, minerAddress string) {

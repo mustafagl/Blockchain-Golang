@@ -2,6 +2,8 @@ package blockchain
 
 import (
 	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"time"
 	"unsafe"
@@ -17,6 +19,22 @@ type Block struct {
 	MinerName  string // Madenci adı
 }
 
+func (b Block) MarshalJSON() ([]byte, error) {
+	type Alias Block
+	return json.Marshal(&struct {
+		PrevHash   string `json:"PrevHash"`
+		Hash       string `json:"Hash"`
+		Data       string `json:"Data"`
+		MerkleRoot string `json:"MerkleRoot"`
+		Alias
+	}{
+		PrevHash:   hex.EncodeToString(b.PrevHash),
+		Hash:       hex.EncodeToString(b.Hash),
+		Data:       hex.EncodeToString(b.Data),
+		MerkleRoot: hex.EncodeToString(b.MerkleRoot),
+		Alias:      (Alias)(b),
+	})
+}
 func NewBlock(prevHash []byte, transactions []*Transaction, reward float64, node *Node) (*Block, bool) {
 	var err error
 	var data []byte

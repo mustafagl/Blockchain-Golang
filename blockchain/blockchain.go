@@ -1,6 +1,7 @@
 package blockchain
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"fmt"
 	"time"
@@ -19,6 +20,19 @@ func NewBlockchain() *Blockchain {
 func (bc *Blockchain) AddBlock(block *Block) {
 	//fmt.Printf("Blok ekleniyor: %+v\n", block)
 	bc.Blocks = append(bc.Blocks, block)
+}
+
+func (bc *Blockchain) GetBlockFromHash(hash []byte) *Block {
+	fmt.Println("Blok aranıyor")
+	for _, block := range bc.Blocks {
+		fmt.Printf("HASH1 %x\n", block.Hash)
+		fmt.Printf("HASH2 %x\n", hash)
+		if bytes.Equal(block.Hash, hash) {
+
+			return block
+		}
+	}
+	return nil
 }
 
 func (bc *Blockchain) LastBlock() *Block {
